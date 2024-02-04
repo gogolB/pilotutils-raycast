@@ -101,8 +101,6 @@ export default function METAR(props: LaunchProps<{ arguments: Arguments.Metar }>
 
     const icao = props.arguments.icao;
 
-    const req = `https://aviationweather.gov/api/data/metar?ids=${icao}&format=json`
-
 
     useEffect(() => {
         async function getMetar() {
