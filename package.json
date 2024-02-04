@@ -3,7 +3,7 @@
   "name": "pilotutils",
   "title": "PilotUtils",
   "description": "Gets the Metar of an ICAO identified airport",
-  "icon": "command-icon.png",
+  "icon": "extension_icon.png",
   "author": "souradeep_bhattacharya_gogol",
   "categories": [
     "Communication",
