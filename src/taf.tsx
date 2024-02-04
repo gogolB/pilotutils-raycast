@@ -150,7 +150,7 @@ export default function TAF(props: LaunchProps<{ arguments: Arguments.Taf }>) {
           subtitle={taf.name}
           detail={
             <List.Item.Detail
-              markdown={`\#${taf.icaoId}\n\#\#${taf.name}\n\`\`\`${taf.rawTAF}\`\`\``} // eslint-disable-line no-useless-escape
+              markdown={`\# ${taf.icaoId}\n\#\# ${taf.name}\n\`\`\`${taf.rawTAF}\`\`\``} // eslint-disable-line no-useless-escape
               metadata={
                 <List.Item.Detail.Metadata>
                   <List.Item.Detail.Metadata.Label title="ICAO" text={taf.icaoId} />
