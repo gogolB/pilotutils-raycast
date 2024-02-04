@@ -11,5 +11,5 @@ Gets the metar for an associated airport
 
 ### TAF
 
-`taf <ICAO>` 
+`taf <ICAO>`
 Gets the TAF for an associated airport
