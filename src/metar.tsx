@@ -96,7 +96,7 @@ function calculateDensityAltitude(metar: METAR_DATA): number {
 export default function METAR(props: LaunchProps<{ arguments: Arguments.Metar }>) {
   const [state, setState] = useState<State>({});
 
-  const icao = props.arguments.icao;
+  const icao = props.arguments.icao.toUpperCase();
 
   useEffect(() => {
     async function getMetar() {

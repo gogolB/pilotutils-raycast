@@ -124,7 +124,7 @@ function drawForecast(fcst: Forcast_Data) {
 export default function TAF(props: LaunchProps<{ arguments: Arguments.Taf }>) {
   const [state, setState] = useState<State>({});
 
-  const icao = props.arguments.icao;
+  const icao = props.arguments.icao.toUpperCase();
 
   useEffect(() => {
     async function getTaf() {
