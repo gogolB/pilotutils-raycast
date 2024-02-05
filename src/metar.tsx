@@ -63,7 +63,6 @@ async function fetchMetar(icao: string): Promise<Array<METAR_DATA>> {
   const response = await fetch(uri);
   const data = (await response.json()) as Array<METAR_DATA>;
   data.forEach((metar) => {
-    console.log(metar.name)
     metar.altim = convertMbToInHg(metar.altim);
     metar.pressure_alt = Math.round((29.92 - metar.altim) * 1000) + metar.elev;
     metar.density_alt = calculateDensityAltitude(metar);
@@ -73,8 +72,9 @@ async function fetchMetar(icao: string): Promise<Array<METAR_DATA>> {
         metar.reportTime_zone = find(metar.lat, metar.lon)[0];
         metar.reportTime_local = convertTZ(metar.reportTime + "Z", metar.reportTime_zone).toLocaleString();
     } catch (error) {
+        // Known bug with geo-tz, we just wont report any data.
+        // eslint-disable-line no-empty
     }
-    console.log(metar.reportTime_local)
   });
   return data;
 }
@@ -107,40 +107,9 @@ function calculateDensityAltitude(metar: METAR_DATA): number {
   return Math.round(densityAltitude);
 }
 
-export default function METAR(props: LaunchProps<{ arguments: Arguments.Metar }>) {
-  const [state, setState] = useState<State>({});
-
-  const icao = props.arguments.icao.toUpperCase().replace(/\s/g, ",");
-
-  useEffect(() => {
-    async function getMetar() {
-      try {
-        const resp = fetchMetar(icao);
-        setState({ icao: icao, response: await resp });
-      } catch (error) {
-        setState({
-          error: error instanceof Error ? error : new Error("Something went wrong"),
-        });
-      }
-    }
-
-    getMetar();
-  }, []);
-
-  console.log(state);
-
-  return (
-    <List isLoading={!state.response && !state.error} isShowingDetail>
-      {state.response?.map((metar) => (
-        <List.Item
-          key={metar.metar_id}
-          title={metar.icaoId}
-          subtitle={metar.name}
-          detail={
-            <List.Item.Detail
-              markdown={` \# ${metar.icaoId}\n\#\# ${metar.name}\n\`\`\`${metar.rawOb}\`\`\``} // eslint-disable-line no-useless-escape
-              metadata={
-                <List.Item.Detail.Metadata>
+function getMetadata(metar: METAR_DATA) {
+    return (
+        <List.Item.Detail.Metadata>
                   <List.Item.Detail.Metadata.Label title="ICAO" text={metar.icaoId} />
                   <List.Item.Detail.Metadata.Label title="Name" text={metar.name} />
                   <List.Item.Detail.Metadata.Label title="Latitude" text={metar.lat.toString()} />
@@ -195,6 +164,43 @@ export default function METAR(props: LaunchProps<{ arguments: Arguments.Metar }>
                       />
                     ))}
                 </List.Item.Detail.Metadata>
+    );
+
+}
+
+
+export default function METAR(props: LaunchProps<{ arguments: Arguments.Metar }>) {
+  const [state, setState] = useState<State>({});
+
+  const icao = props.arguments.icao.toUpperCase().replace(/\s/g, ",");
+
+  useEffect(() => {
+    async function getMetar() {
+      try {
+        const resp = fetchMetar(icao);
+        setState({ icao: icao, response: await resp });
+      } catch (error) {
+        setState({
+          error: error instanceof Error ? error : new Error("Something went wrong"),
+        });
+      }
+    }
+
+    getMetar();
+  }, []);
+
+  return (
+    <List isLoading={!state.response && !state.error} isShowingDetail>
+      {state.response?.map((metar) => (
+        <List.Item
+          key={metar.metar_id}
+          title={metar.icaoId}
+          subtitle={metar.name}
+          detail={
+            <List.Item.Detail
+              markdown={` \# ${metar.icaoId}\n\#\# ${metar.name}\n\`\`\`${metar.rawOb}\`\`\``} // eslint-disable-line no-useless-escape
+              metadata={
+                getMetadata(metar)
               }
             />
           }
