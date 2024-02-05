@@ -60,7 +60,7 @@ type TAF_DATA = {
 };
 
 async function fetchTAF(icao: string): Promise<Array<TAF_DATA>> {
-  const response = await fetch(`https://aviationweather.gov/api/data/taf?ids=${icao}&format=json`);
+  const response = await fetch(`https://aviationweather.gov/api/data/taf?ids=${encodeURIComponent(icao)}&format=json`);
   const data = (await response.json()) as Array<TAF_DATA>;
 
   return data;
@@ -90,8 +90,8 @@ function drawForecast(fcst: Forcast_Data) {
       {fcst.wdir && (
         <List.Item.Detail.Metadata.Label key={uuidv4()} title="Wind Direction" text={fcst.wdir.toString()} />
       )}
-      {fcst.wspd && <List.Item.Detail.Metadata.Label key={uuidv4()} title="Wind Speed" text={fcst.wspd.toString()} />}
-      {fcst.wgst && <List.Item.Detail.Metadata.Label key={uuidv4()} title="Wind Gust" text={fcst.wgst.toString()} />}
+      {fcst.wspd && <List.Item.Detail.Metadata.Label key={uuidv4()} title="Wind Speed" text={`${fcst.wspd.toString()} knots`} />}
+      {fcst.wgst && <List.Item.Detail.Metadata.Label key={uuidv4()} title="Wind Gust" text={`${fcst.wgst.toString()} Knots`} />}
       {fcst.wshearHgt && (
         <List.Item.Detail.Metadata.Label key={uuidv4()} title="Wind Shear Height" text={fcst.wshearHgt.toString()} />
       )}
@@ -102,7 +102,7 @@ function drawForecast(fcst: Forcast_Data) {
         <List.Item.Detail.Metadata.Label key={uuidv4()} title="Wind Shear Speed" text={fcst.wshearSpd.toString()} />
       )}
       {fcst.visib && <List.Item.Detail.Metadata.Label key={uuidv4()} title="Visibility" text={fcst.visib.toString()} />}
-      {fcst.altim && <List.Item.Detail.Metadata.Label key={uuidv4()} title="Altimeter" text={fcst.altim.toString()} />}
+      {fcst.altim && <List.Item.Detail.Metadata.Label key={uuidv4()} title="Altimeter" text={`${convertMbToInHg(fcst.altim).toString()} inHg`} />}
       {fcst.vertVis && (
         <List.Item.Detail.Metadata.Label key={uuidv4()} title="Vertical Visibility" text={fcst.vertVis.toString()} />
       )}
@@ -120,6 +120,11 @@ function drawForecast(fcst: Forcast_Data) {
     </React.Fragment>
   );
 }
+
+function convertMbToInHg(mb: number): number {
+    const inHg = mb * 0.02953;
+    return Math.round((inHg + Number.EPSILON) * 100) / 100;
+  }
 
 export default function TAF(props: LaunchProps<{ arguments: Arguments.Taf }>) {
   const [state, setState] = useState<State>({});

@@ -3,7 +3,7 @@ import { List } from "@raycast/api";
 import { useEffect, useState } from "react";
 import fetch from "node-fetch";
 import { v4 as uuidv4 } from "uuid";
-import { find }  from 'geo-tz';
+import { find }  from 'geo-tz/dist/find-now';
 
 interface State {
   icao?: string;
@@ -63,13 +63,18 @@ async function fetchMetar(icao: string): Promise<Array<METAR_DATA>> {
   const response = await fetch(uri);
   const data = (await response.json()) as Array<METAR_DATA>;
   data.forEach((metar) => {
-    const rt = new Date(metar.reportTime + "Z");
-
+    console.log(metar.name)
     metar.altim = convertMbToInHg(metar.altim);
     metar.pressure_alt = Math.round((29.92 - metar.altim) * 1000) + metar.elev;
     metar.density_alt = calculateDensityAltitude(metar);
-    metar.reportTime_zone = find(metar.lat, metar.lon)[0];
-    metar.reportTime_local = convertTZ(metar.reportTime + "Z", metar.reportTime_zone).toLocaleString();
+    metar.lat = Math.round((metar.lat + Number.EPSILON) * 100000) / 100000;
+    metar.lon = Math.round((metar.lon + Number.EPSILON) * 100000) / 100000;
+    try{ 
+        metar.reportTime_zone = find(metar.lat, metar.lon)[0];
+        metar.reportTime_local = convertTZ(metar.reportTime + "Z", metar.reportTime_zone).toLocaleString();
+    } catch (error) {
+    }
+    console.log(metar.reportTime_local)
   });
   return data;
 }
@@ -140,7 +145,7 @@ export default function METAR(props: LaunchProps<{ arguments: Arguments.Metar }>
                   <List.Item.Detail.Metadata.Label title="Name" text={metar.name} />
                   <List.Item.Detail.Metadata.Label title="Latitude" text={metar.lat.toString()} />
                   <List.Item.Detail.Metadata.Label title="Longitude" text={metar.lon.toString()} />
-                  <List.Item.Detail.Metadata.Label title="Time Zone" text={metar.reportTime_zone} /> 
+                  {metar.reportTime_zone && <List.Item.Detail.Metadata.Label title="Time Zone" text={metar.reportTime_zone} /> }
                   <List.Item.Detail.Metadata.Label title="Field Elevation" text={`${metar.elev.toString()}ft`} />
                   <List.Item.Detail.Metadata.Label
                     title="Pressure Altitude"
@@ -153,10 +158,10 @@ export default function METAR(props: LaunchProps<{ arguments: Arguments.Metar }>
                   <List.Item.Detail.Metadata.Separator />
                   <List.Item.Detail.Metadata.Label title="Observation Time" text={metar.obsTime.toString()} />
                   <List.Item.Detail.Metadata.Label title="Report Time (Zulu)" text={metar.reportTime.toString()} />
-                  <List.Item.Detail.Metadata.Label
+                  {metar.reportTime_local && <List.Item.Detail.Metadata.Label
                     title="Report Time (Local)"
                     text={metar.reportTime_local.toString()}
-                  />
+                  />}
                   <List.Item.Detail.Metadata.Separator />
                   <List.Item.Detail.Metadata.Label title="Temperature" text={`${metar.temp.toString()} °C`} />
                   <List.Item.Detail.Metadata.Label title="Dewpoint" text={`${metar.dewp.toString()} °C`} />
