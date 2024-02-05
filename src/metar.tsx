@@ -3,6 +3,7 @@ import { List } from "@raycast/api";
 import { useEffect, useState } from "react";
 import fetch from "node-fetch";
 import { v4 as uuidv4 } from "uuid";
+import { find }  from 'geo-tz';
 
 interface State {
   icao?: string;
@@ -17,6 +18,7 @@ type METAR_DATA = {
   obsTime: number;
   reportTime: string;
   reportTime_local: string;
+  reportTime_zone: string;
   temp: number;
   dewp: number;
   wdir: number;
@@ -61,17 +63,23 @@ async function fetchMetar(icao: string): Promise<Array<METAR_DATA>> {
   const data = (await response.json()) as Array<METAR_DATA>;
   data.forEach((metar) => {
     const rt = new Date(metar.reportTime + "Z");
-    metar.reportTime_local = rt.toLocaleString();
+
     metar.altim = convertMbToInHg(metar.altim);
     metar.pressure_alt = Math.round((29.92 - metar.altim) * 1000) + metar.elev;
     metar.density_alt = calculateDensityAltitude(metar);
+    metar.reportTime_zone = find(metar.lat, metar.lon)[0];
+    metar.reportTime_local = convertTZ(metar.reportTime + "Z", metar.reportTime_zone).toLocaleString();
   });
   return data;
 }
 
 function convertMbToInHg(mb: number): number {
   const inHg = mb * 0.02953;
-  return inHg;
+  return Math.round((inHg + Number.EPSILON) * 100) / 100;
+}
+
+function convertTZ(date:string , tzString:string ) {
+    return new Date((typeof date === "string" ? new Date(date) : date).toLocaleString("en-US", {timeZone: tzString}));   
 }
 
 function calculateDensityAltitude(metar: METAR_DATA): number {
@@ -96,7 +104,7 @@ function calculateDensityAltitude(metar: METAR_DATA): number {
 export default function METAR(props: LaunchProps<{ arguments: Arguments.Metar }>) {
   const [state, setState] = useState<State>({});
 
-  const icao = props.arguments.icao.toUpperCase();
+  const icao = encodeURI(props.arguments.icao.toUpperCase().replace(/\s/g, ","));
 
   useEffect(() => {
     async function getMetar() {
@@ -129,6 +137,7 @@ export default function METAR(props: LaunchProps<{ arguments: Arguments.Metar }>
                   <List.Item.Detail.Metadata.Label title="Name" text={metar.name} />
                   <List.Item.Detail.Metadata.Label title="Latitude" text={metar.lat.toString()} />
                   <List.Item.Detail.Metadata.Label title="Longitude" text={metar.lon.toString()} />
+                  <List.Item.Detail.Metadata.Label title="Time Zone" text={metar.reportTime_zone} />
                   <List.Item.Detail.Metadata.Label title="Field Elevation" text={`${metar.elev.toString()}ft`} />
                   <List.Item.Detail.Metadata.Label
                     title="Pressure Altitude"
