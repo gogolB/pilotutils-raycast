@@ -59,7 +59,8 @@ type CLOUD = {
 };
 
 async function fetchMetar(icao: string): Promise<Array<METAR_DATA>> {
-  const response = await fetch(`https://aviationweather.gov/api/data/metar?ids=${icao}&format=json`);
+  const uri = `https://aviationweather.gov/api/data/metar?ids=${encodeURIComponent(icao)}&format=json`;
+  const response = await fetch(uri);
   const data = (await response.json()) as Array<METAR_DATA>;
   data.forEach((metar) => {
     const rt = new Date(metar.reportTime + "Z");
@@ -104,7 +105,7 @@ function calculateDensityAltitude(metar: METAR_DATA): number {
 export default function METAR(props: LaunchProps<{ arguments: Arguments.Metar }>) {
   const [state, setState] = useState<State>({});
 
-  const icao = encodeURI(props.arguments.icao.toUpperCase().replace(/\s/g, ","));
+  const icao = props.arguments.icao.toUpperCase().replace(/\s/g, ",");
 
   useEffect(() => {
     async function getMetar() {
@@ -120,6 +121,8 @@ export default function METAR(props: LaunchProps<{ arguments: Arguments.Metar }>
 
     getMetar();
   }, []);
+
+  console.log(state);
 
   return (
     <List isLoading={!state.response && !state.error} isShowingDetail>
@@ -137,7 +140,7 @@ export default function METAR(props: LaunchProps<{ arguments: Arguments.Metar }>
                   <List.Item.Detail.Metadata.Label title="Name" text={metar.name} />
                   <List.Item.Detail.Metadata.Label title="Latitude" text={metar.lat.toString()} />
                   <List.Item.Detail.Metadata.Label title="Longitude" text={metar.lon.toString()} />
-                  <List.Item.Detail.Metadata.Label title="Time Zone" text={metar.reportTime_zone} />
+                  <List.Item.Detail.Metadata.Label title="Time Zone" text={metar.reportTime_zone} /> 
                   <List.Item.Detail.Metadata.Label title="Field Elevation" text={`${metar.elev.toString()}ft`} />
                   <List.Item.Detail.Metadata.Label
                     title="Pressure Altitude"
@@ -177,6 +180,7 @@ export default function METAR(props: LaunchProps<{ arguments: Arguments.Metar }>
                   )}
                   {metar.snow && <List.Item.Detail.Metadata.Label title="Snow" text={metar.snow.toString()} />}
                   {metar.clouds && <List.Item.Detail.Metadata.Separator />}
+                  {metar.clouds && <List.Item.Detail.Metadata.Label title="Clouds" />}
                   {metar.clouds &&
                     metar.clouds.map((cloud) => (
                       <List.Item.Detail.Metadata.Label
